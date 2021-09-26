@@ -244,6 +244,11 @@ class SubgraphDataset(Dataset):
                 placn_subfeats[i][f*6 + 3] = np.var(iByFeature[f])
                 placn_subfeats[i][f*6 + 4] = np.median(iByFeature[f])
                 placn_subfeats[i][f*6 + 5] = math.sqrt(placn_subfeats[i][f*6 + 3])#standard deviation
+            #NodeNorm https://arxiv.org/pdf/2006.07107v1.pdf
+            variance = np.var(placn_subfeats[i])
+            mean = np.mean(placn_subfeats[i])
+            for f in range(0, 5 * 6):
+                placn_subfeats[i][f] = (placn_subfeats[i][f] - mean) / variance
         n_feats = np.concatenate((label_feats,placn_subfeats), axis=1) 
         subgraph.ndata['feat'] = torch.FloatTensor(n_feats)
 

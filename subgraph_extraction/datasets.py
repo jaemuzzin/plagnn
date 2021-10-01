@@ -241,7 +241,7 @@ class SubgraphDataset(Dataset):
 	#without the links’ existing information.
         
         for i in range(2, n_nodes):
-            for f in range(2, 5):
+            for f in range(0, 5):
                 iByFeature = list(map(list, zip(*(self.placn_features[nodes[i]][nodes])))) #converts pernode features of i to list of lists by feature, for only the placn features of nodes in this subgraph
                 placn_subfeats[i][f*6 + 0] = np.mean(iByFeature[f])
                 placn_subfeats[i][f*6 + 1] = np.amin(iByFeature[f])
@@ -249,12 +249,15 @@ class SubgraphDataset(Dataset):
                 placn_subfeats[i][f*6 + 3] = np.var(iByFeature[f])
                 placn_subfeats[i][f*6 + 4] = np.median(iByFeature[f])
                 placn_subfeats[i][f*6 + 5] = math.sqrt(placn_subfeats[i][f*6 + 3])#standard deviation
-            #NodeNorm https://arxiv.org/pdf/2006.07107v1.pdf
-            variance = np.var(placn_subfeats[i])
-            mean = np.mean(placn_subfeats[i])
-            for f in range(0, 5 * 6):
-                placn_subfeats[i][f] = (placn_subfeats[i][f] - mean) / variance
         n_feats = np.concatenate((label_feats,placn_subfeats), axis=1) 
+        
+        #NodeNorm https://arxiv.org/pdf/2006.07107v1.pdf
+        #normalize the features of each node
+        for n in range(0, len(n_feats)):
+            feat_variance = np.var(n_feats[n])
+            feat_mean = np.mean(n_feats[n])
+            for f in range(0, len(n_feats[n])):
+                n_feats[n][f] = (n_feats[n][f] - feat_mean) / feat_variance
         subgraph.ndata['feat'] = torch.FloatTensor(n_feats)
 
         head_id = np.argwhere([label[0] == 0 and label[1] == 1 for label in n_labels])

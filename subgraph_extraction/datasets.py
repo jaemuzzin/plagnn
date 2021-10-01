@@ -233,31 +233,36 @@ class SubgraphDataset(Dataset):
         label_feats[np.arange(n_nodes), n_labels[:, 0]] = 1
         label_feats[np.arange(n_nodes), self.max_n_label[0] + 1 + n_labels[:, 1]] = 1
         placn_subfeats=np.zeros((n_nodes, 5 * 6))
-        #Reason to start at two, from placn paper:
+        
         #We always assign zero to the positive target link in the adjacency matrix
 	#of the weighted graph. The reason is that when we test PLACN
 	#model, positive links should not contain any information of the link’s
 	#existence. PLACN needs to learn both the positive and negative links
 	#without the links’ existing information.
-        
-        for i in range(2, n_nodes):
+        nodes_without_roots = nodes[2:]
+        for i in range(0, n_nodes):
             for f in range(0, 5):
-                iByFeature = list(map(list, zip(*(self.placn_features[nodes[i]][nodes])))) #converts pernode features of i to list of lists by feature, for only the placn features of nodes in this subgraph
+                iByFeature = []
+                #see note above
+                if i == 0 or i == 1:
+                    iByFeature = list(map(list, zip(*(self.placn_features[nodes[i]][nodes_without_roots])))) #converts pernode features of i to list of lists by feature, for only the placn features of nodes in this subgraph
+                else:
+                    iByFeature = list(map(list, zip(*(self.placn_features[nodes[i]][nodes])))) #converts pernode features of i to list of lists by feature, for only the placn features of nodes in this subgraph
+                if len(iByFeature) == 0:
+                    iByFeature = [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1]]
+                #print(iByFeature)
                 placn_subfeats[i][f*6 + 0] = np.mean(iByFeature[f])
                 placn_subfeats[i][f*6 + 1] = np.amin(iByFeature[f])
                 placn_subfeats[i][f*6 + 2] = np.amax(iByFeature[f])
                 placn_subfeats[i][f*6 + 3] = np.var(iByFeature[f])
                 placn_subfeats[i][f*6 + 4] = np.median(iByFeature[f])
                 placn_subfeats[i][f*6 + 5] = math.sqrt(placn_subfeats[i][f*6 + 3])#standard deviation
+            #NodeNorm https://arxiv.org/pdf/2006.07107v1.pdf
+            variance = np.var(placn_subfeats[i])
+            mean = np.mean(placn_subfeats[i])
+            for f in range(0, 5 * 6):
+                placn_subfeats[i][f] = (placn_subfeats[i][f] - mean) / variance
         n_feats = np.concatenate((label_feats,placn_subfeats), axis=1) 
-        
-        #NodeNorm https://arxiv.org/pdf/2006.07107v1.pdf
-        #normalize the features of each node
-        for n in range(0, len(n_feats)):
-            feat_variance = np.var(n_feats[n])
-            feat_mean = np.mean(n_feats[n])
-            for f in range(0, len(n_feats[n])):
-                n_feats[n][f] = (n_feats[n][f] - feat_mean) / feat_variance
         subgraph.ndata['feat'] = torch.FloatTensor(n_feats)
 
         head_id = np.argwhere([label[0] == 0 and label[1] == 1 for label in n_labels])

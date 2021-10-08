@@ -232,33 +232,43 @@ class SubgraphDataset(Dataset):
         
         label_feats[np.arange(n_nodes), n_labels[:, 0]] = 1
         label_feats[np.arange(n_nodes), self.max_n_label[0] + 1 + n_labels[:, 1]] = 1
-        placn_subfeats=np.zeros((n_nodes, 50))
+        placn_subfeats=np.zeros((n_nodes, 10))
         
         for i in range(0, n_nodes):
-            nodes_without_me = [k for j, k in enumerate(nodes) if j not in [0, 1, i]]
-            iByFeature = list(map(list, zip(*(self.placn_features[nodes[i]][nodes_without_me])))) #converts pernode features of i to list of lists by feature, for only the placn features of nodes in this subgraph
-            if len(iByFeature) > 0:
-                for f in range(0, 5):
+            #nodes_without_me = [k for j, k in enumerate(nodes) if j not in [0, 1, i]]
+            #if len(nodes_without_me)==0:
+            #    iByFeature = [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1]]
+            #else:
+            #    iByFeature = list(map(list, zip(*(self.placn_features[nodes[i]][nodes_without_me])))) #converts pernode features of i to list of lists by feature, for only the placn features of nodes in this subgraph
+            #if len(iByFeature) > 0:
+            #    for f in range(0, 5):
                 #print(iByFeature)
-                    placn_subfeats[i][f*6 + 0] = np.mean(iByFeature[f])
-                    placn_subfeats[i][f*6 + 1] = np.amin(iByFeature[f])
-                    placn_subfeats[i][f*6 + 2] = np.amax(iByFeature[f])
-                    placn_subfeats[i][f*6 + 3] = np.var(iByFeature[f])
-                    placn_subfeats[i][f*6 + 4] = np.median(iByFeature[f])
-                    placn_subfeats[i][f*6 + 5] = math.sqrt(placn_subfeats[i][f*6 + 3])#standard deviation
+            #        placn_subfeats[i][f*6 + 0] = np.mean(iByFeature[f])
+            #        placn_subfeats[i][f*6 + 1] = np.amin(iByFeature[f])
+            #        placn_subfeats[i][f*6 + 2] = np.amax(iByFeature[f])
+            #        placn_subfeats[i][f*6 + 3] = np.var(iByFeature[f])
+            #        placn_subfeats[i][f*6 + 4] = np.median(iByFeature[f])
+            #        placn_subfeats[i][f*6 + 5] = math.sqrt(placn_subfeats[i][f*6 + 3])#standard deviation
             
             for f in range(0, 5):
-                placn_subfeats[i][30+f] = self.placn_features[nodes[i]][nodes[0]][f]
-                placn_subfeats[i][35+f] = self.placn_features[nodes[i]][nodes[1]][f]
-                placn_subfeats[i][40+f] = self.placn_features[nodes[i]][nodes[0]][f] / (self.placn_features[nodes[i]][nodes[0]][f] + placn_subfeats[i][f*6]) if self.placn_features[nodes[i]][nodes[0]][f]!=0 else 0 #diff from average
-                placn_subfeats[i][45+f] = self.placn_features[nodes[i]][nodes[1]][f] / (self.placn_features[nodes[i]][nodes[1]][f] + placn_subfeats[i][f*6]) if self.placn_features[nodes[i]][nodes[1]][f]!=0 else 0 #diff from average 
+                placn_subfeats[i][f * 2 + 0] = self.placn_features[nodes[i]][nodes[0]][f]
+                placn_subfeats[i][f * 2 + 1] = self.placn_features[nodes[i]][nodes[1]][f]
+                #placn_subfeats[i][40+f] = self.placn_features[nodes[i]][nodes[0]][f] / (self.placn_features[nodes[i]][nodes[0]][f] + placn_subfeats[i][f*6]) if self.placn_features[nodes[i]][nodes[0]][f]!=0 else 0 #diff from average
+                #placn_subfeats[i][45+f] = self.placn_features[nodes[i]][nodes[1]][f] / (self.placn_features[nodes[i]][nodes[1]][f] + placn_subfeats[i][f*6]) if self.placn_features[nodes[i]][nodes[1]][f]!=0 else 0 #diff from average 
                 
             #NodeNorm https://arxiv.org/pdf/2006.07107v1.pdf
             variance = np.var(placn_subfeats[i])
             mean = np.mean(placn_subfeats[i])
-            for f in range(0, 50):
+            for f in range(0, 10):
                 placn_subfeats[i][f] = (placn_subfeats[i][f] - mean) / variance
         n_feats = np.concatenate((label_feats,placn_subfeats), axis=1) 
+        #NodeNorm https://arxiv.org/pdf/2006.07107v1.pdf
+	#normalize the features of each node
+        #for n in range(0, len(n_feats)):
+        #    feat_variance = np.var(n_feats[n])
+        #    feat_mean = np.mean(n_feats[n])
+        #    for f in range(0, len(n_feats[n])):
+        #        n_feats[n][f] = (n_feats[n][f] - feat_mean) / feat_variance
         subgraph.ndata['feat'] = torch.FloatTensor(n_feats)
 
         head_id = np.argwhere([label[0] == 0 and label[1] == 1 for label in n_labels])

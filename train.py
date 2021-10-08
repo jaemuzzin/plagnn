@@ -120,7 +120,7 @@ if __name__ == '__main__':
                         help="Batch size")
     parser.add_argument("--num_neg_samples_per_link", '-neg', type=int, default=1,
                         help="Number of negative examples to sample per positive link")
-    parser.add_argument("--num_workers", type=int, default=8,
+    parser.add_argument("--num_workers", type=int, default=4,
                         help="Number of dataloading processes")
     parser.add_argument('--add_traspose_rels', '-tr', type=bool, default=False,
                         help='whether to append adj matrix list with symmetric relations')

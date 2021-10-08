@@ -232,7 +232,7 @@ class SubgraphDataset(Dataset):
         
         label_feats[np.arange(n_nodes), n_labels[:, 0]] = 1
         label_feats[np.arange(n_nodes), self.max_n_label[0] + 1 + n_labels[:, 1]] = 1
-        placn_subfeats=np.ones((n_nodes, 40))
+        placn_subfeats=np.zeros((n_nodes, 50))
         
         for i in range(0, n_nodes):
             nodes_without_me = [k for j, k in enumerate(nodes) if j not in [0, 1, i]]
@@ -250,10 +250,13 @@ class SubgraphDataset(Dataset):
             for f in range(0, 5):
                 placn_subfeats[i][30+f] = self.placn_features[nodes[i]][nodes[0]][f]
                 placn_subfeats[i][35+f] = self.placn_features[nodes[i]][nodes[1]][f]
+                placn_subfeats[i][40+f] = self.placn_features[nodes[i]][nodes[0]][f] / (self.placn_features[nodes[i]][nodes[0]][f] + placn_subfeats[i][f*6]) if self.placn_features[nodes[i]][nodes[0]][f]!=0 else 0 #diff from average
+                placn_subfeats[i][45+f] = self.placn_features[nodes[i]][nodes[1]][f] / (self.placn_features[nodes[i]][nodes[1]][f] + placn_subfeats[i][f*6]) if self.placn_features[nodes[i]][nodes[1]][f]!=0 else 0 #diff from average 
+                
             #NodeNorm https://arxiv.org/pdf/2006.07107v1.pdf
             variance = np.var(placn_subfeats[i])
             mean = np.mean(placn_subfeats[i])
-            for f in range(0, 40):
+            for f in range(0, 50):
                 placn_subfeats[i][f] = (placn_subfeats[i][f] - mean) / variance
         n_feats = np.concatenate((label_feats,placn_subfeats), axis=1) 
         subgraph.ndata['feat'] = torch.FloatTensor(n_feats)
@@ -266,7 +269,7 @@ class SubgraphDataset(Dataset):
         subgraph.ndata['id'] = torch.FloatTensor(n_ids)
 
         self.n_feat_dim = n_feats.shape[1]  
-        if placn_subfeats.shape[1] > 40:
+        if placn_subfeats.shape[1] > 50:
             print(nodes)
             print(self.n_feat_dim)
             die()

@@ -3,7 +3,7 @@ Knowledge Graph (KG) completion aims tofind  the  missing  entities  or  relatio
 
 The code provided is a modified version of the GraIL implementation by K. Teru.  The implemenation of our specific improvement can be found in the subgraph_extraction/datasets.py file.  This is where we implement the PLACn feature extraction.  The following readme is also a modified version of the GraIL readme since running the commands are identical.
 
-## Requiremetns
+## Requirements
 
 All the required packages can be installed by running `pip install -r requirements.txt`.
 
